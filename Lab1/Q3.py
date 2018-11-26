@@ -42,7 +42,7 @@ class Environment:
         origin = self.po_pos if is_police else self.pos
         if pos[0] < 0 or pos[1] < 0: # top-left bound check
             return False
-        elif pos[0] >= map_size[0] or pos[1] >= map_size[0]: # bottom right bound check
+        elif pos[0] >= map_size[0] or pos[1] >= map_size[1]: # bottom right bound check
             return False
         diff = np.abs(origin[0] - pos[0]) + np.abs(origin[1] - pos[1]) # Step check
         if diff > 1:
@@ -121,8 +121,9 @@ class QLearner:
         v_plot = []
         rewards = 0.0
         v_plot_x = [] # used for x axis
-        for iter in range(ITER):
-            action = self.epsilon_soft_exploration(state)
+        for iter in range(1, ITER):
+            step_size = np.power(iter, -2/3)
+            action = self.uniform_random_exploration(state)
             #rand_action = np.random.choice(self.env.list_actions())
             next_state, reward = self.env.step(action)
             rewards += reward
@@ -133,17 +134,15 @@ class QLearner:
                     self.Q[q_idx])
             state = next_state
 
-
-            if(iter % 10000 == 0):
-                print('i', iter, ', reward:', rewards)
-
-
             if(iter % 1000 == 0):
                 rewards = 0.0
                 v = np.sum(self.Q[(*start_pos, *init_po_pos,)])
                 v_plot.append(v)
                 v_plot_x.append(iter)
 
+
+            if(iter % 10000 == 0):
+                print('i', iter, ', v(s_o):', v)
 
 
             # if(iter > 500_000):
@@ -193,7 +192,8 @@ class SARSA:
 
 
         action = self.epsilon_soft_exploration(state)
-        for iter in range(ITER):
+        for iter in range(1, ITER):
+            step_size = np.power(iter, -2 / 3)
             #action = self.epsilon_soft_exploration(state)
             #rand_action = np.random.choice(self.env.list_actions())
             next_state, reward = self.env.step(action)

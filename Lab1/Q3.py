@@ -11,6 +11,7 @@ EPSILON = 0.1
 ALPHA = 2.154434e-2
 GAMMA = 0.8
 ITER = 10_000_000
+SARSA_ITER = 500_000
 
 class ActionSpace(Enum):
     STAY = 0
@@ -162,14 +163,16 @@ class QLearner:
         pass
 
 class SARSA:
-    def __init__(self, env:Environment):
+    def __init__(self, epsilon, env:Environment):
+        self.epsilon = epsilon
         self.Q = np.zeros((*map_size, *map_size, len(ActionSpace)))
         self.env = env
         pass
 
     def epsilon_soft_exploration(self, state):
         actions = self.env.list_actions()
-        if np.random.binomial(1, EPSILON) == 1:
+        epsilon = self.epsilon
+        if np.random.binomial(1, epsilon) == 1:
             return np.random.choice(actions)
         else:
             action_list = [i.value for i in actions]
@@ -187,12 +190,12 @@ class SARSA:
         loss_plot = []
         win_rewards = 0.0
         win_plt = []
-        v_plot = []
-        v_plot_x = []
+        v_plot = [np.sum(self.Q[(*start_pos,*init_po_pos,)])]
+        v_plot_x = [0]
 
 
         action = self.epsilon_soft_exploration(state)
-        for iter in range(1, ITER):
+        for iter in range(1, SARSA_ITER):
             step_size = np.power(iter, -2 / 3)
             #action = self.epsilon_soft_exploration(state)
             #rand_action = np.random.choice(self.env.list_actions())
@@ -222,18 +225,17 @@ class SARSA:
                 v = np.sum(self.Q[(*start_pos,*init_po_pos,)])
                 v_plot.append(v)
                 v_plot_x.append(iter)
-                print('i', iter, ', v:', v)
+                # print('i', iter, ', v:', v)
 
 
             # if(iter > 500_000):
             #     self.env.print()
             #     pass
 
-
-        plt.plot(v_plot_x, v_plot, label='SARSA')
+        plt.plot(v_plot_x, v_plot, label='epsilon %.2f' % self.epsilon)
         plt.legend()
 
-        #self.plot(rewards_growth, win_plt, loss_plot)
+        # self.plot(rewards_growth, win_plt, loss_plot)
         return rewards
 
 def main():
@@ -241,11 +243,17 @@ def main():
     env.print()
 
     plt.title('Learning progress')
-    q = QLearner(env)
-    q.q_learning()
+    # q = QLearner(env)
+    # q.q_learning()
 
-    sa = SARSA(env)
-    sa.sarsa()
+    epsilons = np.arange(0.1, 1, 0.1)
+    for epsilon in epsilons:
+        np.random.seed(123)
+        print('computing epsilon', epsilon)
+        env = Environment()
+        env.print()
+        sa = SARSA(epsilon, env)
+        sa.sarsa()
 
     plt.ylabel('value')
     plt.xlabel('iterations')

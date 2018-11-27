@@ -99,6 +99,7 @@ class Environment:
 class QLearner:
     def __init__(self, env:Environment):
         self.Q = np.zeros((*map_size, *map_size, len(ActionSpace)))
+        self.Q_counter = np.ones((*map_size, *map_size, len(ActionSpace)))
         self.env = env
         pass
     def epsilon_soft_exploration(self, state):
@@ -123,13 +124,17 @@ class QLearner:
         rewards = 0.0
         v_plot_x = [] # used for x axis
         for iter in range(1, ITER):
-            step_size = np.power(iter, -2/3)
+
             action = self.uniform_random_exploration(state)
+
+
             #rand_action = np.random.choice(self.env.list_actions())
             next_state, reward = self.env.step(action)
             rewards += reward
             # Q-Learning update
             q_idx = (*state, action.value)
+            step_size = np.power(self.Q_counter[q_idx], -2/3)
+            self.Q_counter[q_idx] += 1
             self.Q[q_idx] += step_size * (
                     reward + GAMMA * np.max(self.Q[(*next_state,)]) -
                     self.Q[q_idx])
@@ -137,7 +142,7 @@ class QLearner:
 
             if(iter % 1000 == 0):
                 rewards = 0.0
-                v = np.sum(self.Q[(*start_pos, *init_po_pos,)])
+                v = np.max(self.Q[(*start_pos, *init_po_pos,)])
                 v_plot.append(v)
                 v_plot_x.append(iter)
 
@@ -166,6 +171,7 @@ class SARSA:
     def __init__(self, epsilon, env:Environment):
         self.epsilon = epsilon
         self.Q = np.zeros((*map_size, *map_size, len(ActionSpace)))
+        self.Q_counter = np.ones((*map_size, *map_size, len(ActionSpace)))
         self.env = env
         pass
 
@@ -196,14 +202,15 @@ class SARSA:
 
         action = self.epsilon_soft_exploration(state)
         for iter in range(1, SARSA_ITER):
-            step_size = np.power(iter, -2 / 3)
-            #action = self.epsilon_soft_exploration(state)
-            #rand_action = np.random.choice(self.env.list_actions())
             next_state, reward = self.env.step(action)
             next_action = self.epsilon_soft_exploration(next_state)
             rewards += reward
             # Q-Learning update
             q_idx = (*state, action.value)
+
+            step_size = np.power(self.Q_counter[q_idx], -2/3)
+            self.Q_counter[q_idx] += 1
+
             self.Q[q_idx] += step_size * (
                     reward + GAMMA * self.Q[(*next_state,next_action.value)] -
                     self.Q[q_idx])
@@ -222,7 +229,7 @@ class SARSA:
                 loss_rewards = 0.0
                 win_rewards = 0.0
 
-                v = np.sum(self.Q[(*start_pos,*init_po_pos,)])
+                v = np.max(self.Q[(*start_pos,*init_po_pos,)])
                 v_plot.append(v)
                 v_plot_x.append(iter)
                 # print('i', iter, ', v:', v)
@@ -242,18 +249,18 @@ def main():
     env = Environment()
     env.print()
 
-    plt.title('Learning progress')
-    # q = QLearner(env)
-    # q.q_learning()
+    plt.title('Q Learning')
+    q = QLearner(env)
+    q.q_learning()
 
-    epsilons = np.arange(0.1, 1, 0.1)
-    for epsilon in epsilons:
-        np.random.seed(123)
-        print('computing epsilon', epsilon)
-        env = Environment()
-        env.print()
-        sa = SARSA(epsilon, env)
-        sa.sarsa()
+    # epsilons = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5]
+    # for epsilon in epsilons:
+    #     np.random.seed(123)
+    #     print('computing epsilon', epsilon)
+    #     env = Environment()
+    #     env.print()
+    #     sa = SARSA(epsilon, env)
+    #     sa.sarsa()
 
     plt.ylabel('value')
     plt.xlabel('iterations')

@@ -219,7 +219,7 @@ class ValueIterator:
 
 def main():
 
-    lambdas = [0.05, 0.4, 0.5]
+    lambdas = [0.01, 0.02, 0.05,0.1,0.2, 0.4, 0.5]
     for lmd in lambdas:
         print('computing with lambda', lmd)
         env = Environment()
@@ -228,7 +228,7 @@ def main():
         plt.plot(convergence, label='lambda=%.2f' % lmd)
 
         np.random.seed(123)
-        for i in range(20):
+        for i in range(100):
             vi.simulate()
 
     plt.title('Value Iteration with different lambda')

@@ -16,7 +16,7 @@ class DQNAgent:
     #Constructor for the agent (invoked when DQN is first called in main)
     def __init__(self, state_size, action_size):
         self.check_solve = False	#If True, stop if you satisfy solution confition
-        self.render = True        #If you want to see Cartpole learning, then change to True
+        self.render = False        #If you want to see Cartpole learning, then change to True
 
         #Get size of state and action
         self.state_size = state_size
@@ -71,8 +71,12 @@ class DQNAgent:
         #TODO Insert your e-greedy policy code here
         #Tip 1: Use the random package to generate a random action.
         #Tip 2: Use keras.model.predict() to compute Q-values from the state.
-        action = random.randrange(self.action_size)
-        return action
+
+        if np.random.binomial(1, self.epsilon) == 1:
+            return random.randrange(self.action_size)
+        else:
+
+            return 1
 
     #Save sample <s,a,r,s'> to the replay memory
     def append_sample(self, state, action, reward, next_state, done):

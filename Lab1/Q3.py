@@ -10,8 +10,9 @@ STATE_SPACE_SIZE = (map_size[0] * map_size[1]) ** 2
 EPSILON = 0.1
 ALPHA = 2.154434e-2
 GAMMA = 0.8
-ITER = 10_000_000
+ITER = 1_000_000
 SARSA_ITER = 500_000
+ROLLOUT_COUNT = 100
 
 class ActionSpace(Enum):
     STAY = 0
@@ -150,6 +151,11 @@ class QLearner:
             if(iter % 10000 == 0):
                 print('i', iter, ', v(s_o):', v)
 
+            if(iter % 1_000_000 < 100) and iter > 1000:
+                print('')
+                print('t=', iter % 1_000_000 + 10000000)
+                self.env.print()
+                # print('i', iter, ', v:', v)
 
             # if(iter > 500_000):
             #     self.env.print()
@@ -157,6 +163,20 @@ class QLearner:
         plt.plot(v_plot_x, v_plot, label='Q-Learning')
         #self.plot(rewards_growth, win_plt, loss_plot)
         return rewards
+
+    def rollout(self):
+        for i in range(ROLLOUT_COUNT):
+            actions = self.env.list_actions()
+            state = self.env.state
+            action_list = [i.value for i in actions]
+            q_idx = (*state, action_list)  # select only available actions
+            action_values = self.Q[q_idx]
+            actions_max_value = np.max(action_values)  # argmax does not return multiple max
+            max_value_actions = [actions[action_idx] for action_idx, action_value in enumerate(action_values) if
+                                 action_value == actions_max_value]
+            action = np.random.choice(max_value_actions)
+            self.env.step(action)
+            self.env.print()
 
     def plot(self, rewards, win=None, loss=None, ):
         plt.figure()
@@ -232,8 +252,6 @@ class SARSA:
                 v = np.max(self.Q[(*start_pos,*init_po_pos,)])
                 v_plot.append(v)
                 v_plot_x.append(iter)
-                # print('i', iter, ', v:', v)
-
 
             # if(iter > 500_000):
             #     self.env.print()
@@ -245,22 +263,39 @@ class SARSA:
         # self.plot(rewards_growth, win_plt, loss_plot)
         return rewards
 
+    def rollout(self):
+        for i in range(ROLLOUT_COUNT):
+            actions = self.env.list_actions()
+            state = self.env.state
+            action_list = [i.value for i in actions]
+            q_idx = (*state, action_list)  # select only available actions
+            action_values = self.Q[q_idx]
+            actions_max_value = np.max(action_values)  # argmax does not return multiple max
+            max_value_actions = [actions[action_idx] for action_idx, action_value in enumerate(action_values) if
+                                 action_value == actions_max_value]
+            action = np.random.choice(max_value_actions)
+            self.env.step(action)
+            self.env.print()
+
 def main():
     env = Environment()
     env.print()
 
-    plt.title('Q Learning')
+    plt.title('SARSA Learning')
     q = QLearner(env)
     q.q_learning()
+    q.rollout()
 
     # epsilons = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5]
-    # for epsilon in epsilons:
-    #     np.random.seed(123)
-    #     print('computing epsilon', epsilon)
-    #     env = Environment()
-    #     env.print()
-    #     sa = SARSA(epsilon, env)
-    #     sa.sarsa()
+    epsilons = np.arange(0.1, 0.2, 0.1)
+    for epsilon in epsilons:
+        np.random.seed(123)
+        print('SARSA epsilon', epsilon)
+        env = Environment()
+        env.print()
+        sa = SARSA(epsilon, env)
+        sa.sarsa()
+        sa.rollout()
 
     plt.ylabel('value')
     plt.xlabel('iterations')

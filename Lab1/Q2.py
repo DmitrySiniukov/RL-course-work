@@ -8,8 +8,8 @@ start_pos = (0,0)
 goal_pos = [(0,0), (0,2),(5,2),(5,0)]
 init_po_pos = (2,1)
 STATE_SPACE_SIZE = (map_size[0] * map_size[1]) ** 2
-THETA = 0.1
-MAX_ITER = 20
+THETA = 1e-4
+MAX_ITER = 100
 
 
 class ActionSpace(Enum):
@@ -172,8 +172,8 @@ class ValueIterator:
                 for action in self.env.list_actions(state):
                     next_states_idx, rewards, _ = self.env.step(action, state)
                     next_states_idx_reordered = list(zip(next_states_idx[0], next_states_idx[1]))
-                    all_v = self.V[next_states_idx_reordered] * _lambda
-                    summed = np.sum(rewards) + np.sum(all_v)
+                    all_v = self.V[next_states_idx_reordered] * _lambda / len(rewards)
+                    summed = np.sum(rewards)/len(rewards) + np.sum(all_v)
 
                     if summed > max_a:
                         max_a = summed
@@ -185,7 +185,9 @@ class ValueIterator:
                 delta = np.maximum(delta, np.abs(v - new_v))
 
             iter += 1
-            benchmark.append(self.V[initial_state.idx])
+            v = self.V[initial_state.idx]
+            print(v)
+            benchmark.append(v)
 
         return benchmark
 
@@ -219,22 +221,27 @@ class ValueIterator:
 
 def main():
 
-    lambdas = [0.01, 0.02, 0.05,0.1,0.2, 0.4, 0.5]
+    lambdas = [ 0.01, 0.02, 0.05,0.1,0.2, 0.5, 0.9] #,
+    #lambdas = np.arange(0.05, 0.95, 0.05)
+    converg = []
     for lmd in lambdas:
+        np.random.seed(123)
         print('computing with lambda', lmd)
         env = Environment()
         vi = ValueIterator(lmd, env)
         convergence = vi.learn()
+        converg.append(convergence[-1])
         plt.plot(convergence, label='lambda=%.2f' % lmd)
+        # for i in range(100):
+        #     vi.simulate()
 
-        np.random.seed(123)
-        for i in range(100):
-            vi.simulate()
-
-    plt.title('Value Iteration with different lambda')
+    #plt.plot(lambdas, converg)
+    plt.title('Value iteration convergence')
     plt.legend()
     plt.savefig('Q2_lambda_graph.png')
     #plt.ylim((0,100))
+    plt.xlabel('iterations')
+    plt.ylabel('v value')
     plt.show()
 
 

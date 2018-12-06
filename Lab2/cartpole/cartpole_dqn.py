@@ -16,7 +16,7 @@ class DQNAgent:
     #Constructor for the agent (invoked when DQN is first called in main)
     def __init__(self, state_size, action_size):
         self.check_solve = False	#If True, stop if you satisfy solution confition
-        self.render = True        #If you want to see Cartpole learning, then change to True
+        self.render = False        #If you want to see Cartpole learning, then change to True
 
         #Get size of state and action
         self.state_size = state_size

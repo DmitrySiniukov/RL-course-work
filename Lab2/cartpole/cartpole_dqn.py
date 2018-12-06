@@ -22,9 +22,8 @@ class DQNAgent:
         self.state_size = state_size
         self.action_size = action_size
 
-################################################################################
-################################################################################
-        #Set hyper parameters for the DQN. Do not adjust those labeled as Fixed.
+
+        # TODO Set hyper parameters for the DQN. Do not adjust those labeled as Fixed.
         self.discount_factor = 0.95
         self.learning_rate = 0.005
         self.epsilon = 0.02 #Fixed
@@ -32,8 +31,8 @@ class DQNAgent:
         self.memory_size = 1000
         self.train_start = 1000 #Fixed
         self.target_update_frequency = 1
-################################################################################
-################################################################################
+        # ================
+
 
         #Number of test states for Q value plots
         self.test_state_no = 10000
@@ -50,9 +49,8 @@ class DQNAgent:
 
     #Approximate Q function using Neural Network
     #State is the input and the Q Values are the output.
-###############################################################################
-###############################################################################
-        #Edit the Neural Network model here
+
+        #TODO Edit the Neural Network model here
         #Tip: Consult https://keras.io/getting-started/sequential-model-guide/
     def build_model(self):
         model = Sequential()
@@ -63,8 +61,6 @@ class DQNAgent:
         model.summary()
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
         return model
-###############################################################################
-###############################################################################
 
     #After some time interval update the target model to be same with model
     def update_target_model(self):
@@ -72,15 +68,12 @@ class DQNAgent:
 
     #Get action from model using epsilon-greedy policy
     def get_action(self, state):
-###############################################################################
-###############################################################################
-        #Insert your e-greedy policy code here
+        #TODO Insert your e-greedy policy code here
         #Tip 1: Use the random package to generate a random action.
         #Tip 2: Use keras.model.predict() to compute Q-values from the state.
         action = random.randrange(self.action_size)
         return action
-###############################################################################
-###############################################################################
+
     #Save sample <s,a,r,s'> to the replay memory
     def append_sample(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done)) #Add sample to the end of the list
@@ -107,15 +100,13 @@ class DQNAgent:
         target_val = self.target_model.predict(update_target) #Generate the target values for training the outer loop target network
 
         #Q Learning: get maximum Q value at s' from target network
-###############################################################################
-###############################################################################
-        #Insert your Q-learning code here
+
+        # TODO Insert your Q-learning code here
         #Tip 1: Observe that the Q-values are stored in the variable target
         #Tip 2: What is the Q-value of the action taken at the last state of the episode?
         for i in range(self.batch_size): #For every batch
             target[i][action[i]] = random.randint(0,1)
-###############################################################################
-###############################################################################
+        # ======== end to do ======
 
         #Train the inner loop network
         self.model.fit(update_input, target, batch_size=self.batch_size,

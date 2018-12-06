@@ -16,7 +16,7 @@ class DQNAgent:
     #Constructor for the agent (invoked when DQN is first called in main)
     def __init__(self, state_size, action_size):
         self.check_solve = False	#If True, stop if you satisfy solution confition
-        self.render = False        #If you want to see Cartpole learning, then change to True
+        self.render = True        #If you want to see Cartpole learning, then change to True
 
         #Get size of state and action
         self.state_size = state_size
@@ -29,8 +29,8 @@ class DQNAgent:
         self.epsilon = 0.02 #Fixed
         self.batch_size = 32 #Fixed
         self.memory_size = 1000
-        self.train_start = 1000 #Fixed
-        self.target_update_frequency = 1
+        self.train_start = 1000 #Fixed - original:1000
+        self.target_update_frequency = 10
         # ================
 
 
@@ -75,8 +75,9 @@ class DQNAgent:
         if np.random.binomial(1, self.epsilon) == 1:
             return random.randrange(self.action_size)
         else:
-
-            return 1
+            out = self.model.predict(state)
+            action = np.argmax(out)
+            return action
 
     #Save sample <s,a,r,s'> to the replay memory
     def append_sample(self, state, action, reward, next_state, done):
@@ -108,8 +109,12 @@ class DQNAgent:
         # TODO Insert your Q-learning code here
         #Tip 1: Observe that the Q-values are stored in the variable target
         #Tip 2: What is the Q-value of the action taken at the last state of the episode?
+
+        Y = np.max(target_val, axis=1) * self.discount_factor + reward
+
         for i in range(self.batch_size): #For every batch
-            target[i][action[i]] = random.randint(0,1)
+
+            target[i][action[i]] = Y[i]
         # ======== end to do ======
 
         #Train the inner loop network

@@ -12,9 +12,7 @@ EPISODES = 1000 #Maximum number of episodes
 
 DEFAULT_TOPO = [16]
 TEST_TOPO = [
-    [16],
-    [32],
-    [64],
+    [32,16],
              ]
 
 #DQN Agent for the Cartpole
@@ -22,7 +20,7 @@ TEST_TOPO = [
 class DQNAgent:
     #Constructor for the agent (invoked when DQN is first called in main)
     def __init__(self, state_size, action_size, topo=DEFAULT_TOPO):
-        self.check_solve = False	#If True, stop if you satisfy solution confition
+        self.check_solve = True	#If True, stop if you satisfy solution confition
         self.render = False        #If you want to see Cartpole learning, then change to True
 
         #Get size of state and action
@@ -32,11 +30,11 @@ class DQNAgent:
 
 
         # TODO Set hyper parameters for the DQN. Do not adjust those labeled as Fixed.
-        self.discount_factor = 0.97
+        self.discount_factor = 0.98
         self.learning_rate = 0.005
         self.epsilon = 0.02 #Fixed
         self.batch_size = 32 #Fixed
-        self.memory_size = 10000
+        self.memory_size = 1000
         self.train_start = 1000 #Fixed
         self.target_update_frequency = 5
         # ================
@@ -176,8 +174,6 @@ class DQNAgent:
         pylab.legend()
         pylab.savefig("score_network_search.png")
 
-
-
 def runner():
     for e in range(EPISODES):
         done = False
@@ -265,7 +261,60 @@ if __name__ == "__main__":
                 state = next_state
 
         scores, episodes = [], [] #Create dynamically growing score and episode counters
-        runner()
+        #runner()
+
+        for e in range(EPISODES):
+            done = False
+            score = 0
+            state = env.reset()  # Initialize/reset the environment
+            state = np.reshape(state, [1,
+                                       state_size])  # Reshape state so that to a 1 by state_size two-dimensional array ie. [x_1,x_2] to [[x_1,x_2]]
+            # Compute Q values for plotting
+            tmp = agent.model.predict(test_states)
+            max_q[e][:] = np.max(tmp, axis=1)
+            max_q_mean[e] = np.mean(max_q[e][:])
+
+            while not done:  # time step
+                if agent.render:
+                    env.render()  # Show cartpole animation
+
+                # Get action for the current state and go one step in environment
+                action = agent.get_action(state)
+                next_state, reward, done, info = env.step(action)
+                next_state = np.reshape(next_state, [1, state_size])  # Reshape next_state similarly to state
+
+                # Save sample <s, a, r, s'> to the replay memory
+                agent.append_sample(state, action, reward, next_state, done)
+                # Training step
+                agent.train_model()
+                score += reward  # Store episodic reward
+                state = next_state  # Propagate state
+
+                if done:
+                    # At the end of very episode, update the target network
+                    if e % agent.target_update_frequency == 0:
+                        agent.update_target_model()
+                    # Plot the play time for every episode
+                    scores.append(score)
+                    episodes.append(e)
+
+                    print("episode:", e, "  score:", score, " q_value:", max_q_mean[e], "  memory length:",
+                          len(agent.memory))
+
+                    # if the mean of scores of last 100 episodes is bigger than 195
+                    # stop training
+                    if agent.check_solve:
+                        if np.mean(scores[-min(100, len(scores)):]) >= 195:
+                            print("solved after", e - 100, "episodes")
+                            # agent.plot_data(episodes,scores,max_q_mean[:e+1])
+                            # sys.exit()
+                            agent.plot_score(episodes, scores, label=label)
+                            agent.plot_max_q_mean(episodes, max_q_mean[:e + 1], label=label)
+                            sys.exit()
+
+
+        agent.plot_score(episodes, scores, label=label)
+        agent.plot_max_q_mean(episodes, max_q_mean, label=label)
         #agent.plot_data(episodes,scores,max_q_mean)
 
     agent.save_max_q_mean()
